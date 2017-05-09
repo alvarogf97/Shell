@@ -45,7 +45,7 @@ void get_history_bypos(char ** args, int pos, T_lista history, int * s){
 
 void add_history(T_lista * history, char * command, char ** args){
 	int i = 0;
-	T_lista new = (T_lista)malloc(sizeof(T_lista));
+	T_lista new = (T_lista)malloc(sizeof(struct T_nodo));
 	if(new == NULL){
 		printf("Error reservando memoria\n");
 		exit(-1);

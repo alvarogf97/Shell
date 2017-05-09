@@ -55,7 +55,9 @@ void add_history(T_lista * history, char * command, char ** args){
 	strcpy(new->command,command);
 
 
-	new->args = (char**)malloc(sizeof(args));
+	int args_s = 0;
+	for(; args[args_s]; args_s++);
+	new->args = (char**)malloc(args_s);
 	while(args[i] != NULL){
 		(new->args)[i] = (char*)malloc(sizeof(args[i]));
 		strcpy((new->args)[i], args[i]);

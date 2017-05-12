@@ -30,6 +30,7 @@ struct T_nodo{
 	int id;
 	char * command;
 	char ** args;
+	int background;
 	T_lista prev;
 	T_lista sig;
 	T_lista last;
@@ -37,20 +38,20 @@ struct T_nodo{
 
 T_lista new_history();
 
-void add_history(T_lista * history, char * command, char ** args);
+void add_history(T_lista * history, char * command, char ** args, int b);
 
 void print_history(T_lista history);
 
 void destruct_history(T_lista * history);
 
-void get_history_bypos(char ** args, int pos, T_lista history, int * s);
+void get_history_bypos(char ** args, int pos, T_lista history, int * s, int * b);
 
-
+void replace(char** args);
 
 // ----------- ENUMERATIONS ---------------------------------------------
-enum status { SUSPENDED, SIGNALED, EXITED};
+enum status { SUSPENDED, SIGNALED, EXITED, CONTINUED};
 enum job_state { FOREGROUND, BACKGROUND, STOPPED };
-static char* status_strings[] = { "Suspended","Signaled","Exited" };
+static char* status_strings[] = { "Suspended","Signaled","Exited", "Continued" };
 static char* state_strings[] = { "Foreground","Background","Stopped" };
 
 // ----------- JOB TYPE FOR JOB LIST ------------------------------------
@@ -59,7 +60,11 @@ typedef struct job_
 	pid_t pgid; /* group id = process lider id */
 	char * command; /* program name */
 	enum job_state state;
+	int timeout;
+	int rr;
+	struct termios mode;
 	struct job_ *next; /* next job in the list */
+
 } job;
 
 // -----------------------------------------------------------------------
@@ -119,6 +124,7 @@ void block_signal(int signal, int block);
 
 //Colors
 #define NORMAL "\033[0m"
+#define AMARILLO "\x1b[93m"
 #define ROJO "\x1b[31;1;1m"
 #define NEGRO "\x1b[0m"
 #define VERDE "\x1b[32;1;1m"

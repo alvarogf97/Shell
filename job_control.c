@@ -24,12 +24,13 @@ T_lista new_history(){
 	return lista;
 }
 
-void get_history_bypos(char ** args, int pos, T_lista history, int * s){
+void get_history_bypos(char ** args, int pos, T_lista history, int * s, int * b){
 	int ok = 0;
 	*s = 0;
 	int i = 0;
 	while(history != NULL && ok == 0){
 		if(pos == history->id){
+			*b = history->background;
 			ok = 1;
 			while((history->args)[i] != NULL){
 				strcpy(args[i],(history->args)[i]);
@@ -43,9 +44,9 @@ void get_history_bypos(char ** args, int pos, T_lista history, int * s){
 	}
 }
 
-void add_history(T_lista * history, char * command, char ** args){
+void add_history(T_lista * history, char * command, char ** args, int b){
 	int i = 0;
-	T_lista new = (T_lista)malloc(sizeof(struct T_nodo));
+	T_lista new = (T_lista)malloc(sizeof(T_lista));
 	if(new == NULL){
 		printf("Error reservando memoria\n");
 		exit(-1);
@@ -55,16 +56,15 @@ void add_history(T_lista * history, char * command, char ** args){
 	strcpy(new->command,command);
 
 
-	int args_s = 0;
-	for(; args[args_s]; args_s++);
-	new->args = (char**)malloc(args_s);
+	new->args = (char**)malloc(sizeof(args));
 	while(args[i] != NULL){
-		(new->args)[i] = (char*)malloc(strlen(args[i]));
+		(new->args[i]) = (char*)malloc(strlen(args[i]));
 		strcpy((new->args)[i], args[i]);
 		i++;
 	}
 
 	new->sig = NULL;
+	new->background = b;
 
 	if(*history == NULL){
 		*history = new;
@@ -92,7 +92,7 @@ void print_history(T_lista history){
 				printf("%s ", (history->args)[i]);
 				i++;
 			}
-			printf("\n");
+			printf("\n"NORMAL);
 			fflush(stdout);
 			i = 0;
 			history = (history->sig);
@@ -115,6 +115,19 @@ void destruct_history(T_lista * history){
 		*history = (*history)->sig;
 		free(prev);
 	}
+}
+// -----------------------------------------------------------------------
+//      replace
+// -----------------------------------------------------------------------
+
+
+void replace(char** args){
+	int i = 0;
+	while(args[i+2]!=NULL){
+		args[i] = strdup(args[i+2]);
+		i++;
+	}
+	args[i] = NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -235,6 +248,7 @@ job * new_job(pid_t pid, const char * command, enum job_state state)
 	aux->pgid=pid;
 	aux->state=state;
 	aux->command=strdup(command);
+	aux->rr = -1;
 	aux->next=NULL;
 	return aux;
 }
@@ -292,8 +306,11 @@ job * get_item_bypos( job * list, int n)
 /*imprime una linea en el terminal con los datos del elemento: pid, nombre ... */
 void print_item(job * item)
 {
-
-	printf(VERDE"pid: %d, command: %s, state: %s\n", item->pgid, item->command, state_strings[item->state]);
+	if(item->rr == -1){
+		printf(VERDE"pid: %d, command: %s, state: %s\n"NORMAL, item->pgid, item->command, state_strings[item->state]);
+	}else{
+		printf(VERDE"pid: %d, command: %s, state: %s, number of process %i\n"NORMAL, item->pgid, item->command, state_strings[item->state],item->rr);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -302,13 +319,18 @@ void print_list(job * list, void (*print)(job *))
 {
 	int n=1;
 	job * aux=list;
-	printf("Contents of %s:\n",list->command);
-	while(aux->next!= NULL)
-	{
-		printf(" [%d] ",n);
-		print(aux->next);
-		n++;
-		aux=aux->next;
+
+	if(aux->next == NULL){
+		printf(AMARILLO"No hay tareas\n"NORMAL);
+	}else{
+		printf(AMARILLO"Lista de tareas:\n"VERDE);
+		while(aux->next!= NULL)
+		{
+			printf(" [%d] ",n);
+			print(aux->next);
+			n++;
+			aux=aux->next;
+		}
 	}
 }
 
@@ -326,8 +348,11 @@ enum status analyze_status(int status, int *info)
 		// el proceso termio
 		if (WIFSIGNALED (status))
 		{ *info=WTERMSIG (status); return(SIGNALED);}
-		else
+		else if(WIFEXITED(status))
 		{ *info=WEXITSTATUS(status); return(EXITED);}
+		else{
+			*info=WTERMSIG(status); return(CONTINUED);
+		}
 	}
 
 }

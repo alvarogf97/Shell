@@ -323,7 +323,7 @@ int main(void)
   signal(SIGALRM,handler_SIGALRM);
   char * path[MAX_LINE];
   char * hostname = (char*)malloc(sizeof(char));
-  int i = gethostname(hostname,sizeof(hostname));
+  int i = gethostname(hostname,20);
   char r = rootvalue();
   ignore_terminal_signals();
 
